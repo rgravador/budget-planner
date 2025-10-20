@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Layout, Card, Button, Form, Input, Typography, Space, Alert, Avatar, Row, Col, Divider, message } from 'antd'
+import { Layout, Card, Button, Form, Input, Typography, Space, Alert, Avatar, Row, Col, Divider, DatePicker, List } from 'antd'
 import {
   ArrowLeftOutlined,
   UserOutlined,
@@ -9,9 +9,14 @@ import {
   MailOutlined,
   SaveOutlined,
   IdcardOutlined,
+  WalletOutlined,
+  CalendarOutlined,
+  PlusOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import { trpc } from '@/lib/trpc/client'
+import { useMessage } from '@/lib/antd/useMessage'
+import dayjs, { Dayjs } from 'dayjs'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -25,6 +30,8 @@ export default function ProfilePage() {
   const [form] = Form.useForm()
   const [isMobile, setIsMobile] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs())
+  const message = useMessage()
 
   useEffect(() => {
     const checkMobile = () => {
@@ -39,6 +46,20 @@ export default function ProfilePage() {
 
   // Fetch profile data
   const { data: profile, refetch: refetchProfile } = trpc.auth.getProfile.useQuery()
+
+  // Fetch budget for selected month
+  const { data: budgetData } = trpc.budget.getByMonth.useQuery({
+    month: selectedMonth.format('YYYY-MM'),
+  })
+
+  // Fetch expenses by category for selected month to calculate total
+  const { data: expensesByCategory = [] } = trpc.expense.getByCategory.useQuery({
+    month: selectedMonth.format('YYYY-MM'),
+  })
+
+  const totalBudget = budgetData?.amount || 0
+  const totalExpenses = expensesByCategory.reduce((sum, exp) => sum + exp.total, 0)
+  const remainingBudget = totalBudget - totalExpenses
 
   // Update profile mutation
   const updateProfileMutation = trpc.auth.updateProfile.useMutation({
@@ -73,6 +94,12 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setIsEditing(false)
     form.resetFields()
+  }
+
+  const handleMonthChange = (date: Dayjs | null) => {
+    if (date) {
+      setSelectedMonth(date)
+    }
   }
 
   // Get initials for avatar
@@ -216,6 +243,161 @@ export default function ProfilePage() {
             </div>
           </Card>
 
+          {/* Budget Overview Card */}
+          <Card
+            title={
+              isMobile ? (
+                <Space>
+                  <WalletOutlined style={{ color: '#003366' }} />
+                  <span style={{ color: '#003366', fontSize: 14 }}>Budget Overview</span>
+                </Space>
+              ) : (
+                <Space>
+                  <WalletOutlined style={{ color: '#003366' }} />
+                  <span style={{ color: '#003366' }}>Budget Overview - {selectedMonth.format('MMM YYYY')}</span>
+                </Space>
+              )
+            }
+            style={{ borderRadius: 8 }}
+            variant="borderless"
+            extra={
+              isMobile ? (
+                <Space size={4}>
+                  <DatePicker
+                    picker="month"
+                    value={selectedMonth}
+                    onChange={handleMonthChange}
+                    format="MMM YY"
+                    suffixIcon={<CalendarOutlined style={{ color: '#003366', fontSize: 12 }} />}
+                    size="small"
+                    style={{ width: 85 }}
+                  />
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined style={{ fontSize: 12 }} />}
+                    onClick={() => router.push('/budget/new')}
+                    size="small"
+                    style={{
+                      background: '#003366',
+                      borderColor: '#003366',
+                      padding: '0 8px',
+                    }}
+                  />
+                </Space>
+              ) : (
+                <Space>
+                  <DatePicker
+                    picker="month"
+                    value={selectedMonth}
+                    onChange={handleMonthChange}
+                    format="MMM YYYY"
+                    suffixIcon={<CalendarOutlined style={{ color: '#003366' }} />}
+                    size="small"
+                    style={{ width: 120 }}
+                  />
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => router.push('/budget/new')}
+                    size="small"
+                    style={{
+                      background: '#003366',
+                      borderColor: '#003366',
+                    }}
+                  >
+                    Add
+                  </Button>
+                </Space>
+              )
+            }
+          >
+            <List
+              size="large"
+              dataSource={[
+                {
+                  icon: <WalletOutlined style={{ fontSize: 20, color: '#003366' }} />,
+                  label: 'Total Budget',
+                  value: totalBudget,
+                  color: '#003366',
+                  bgColor: '#e6f0ff',
+                },
+                {
+                  icon: <PlusOutlined style={{ fontSize: 20, color: '#D4AF37' }} />,
+                  label: 'Total Expenses',
+                  value: totalExpenses,
+                  color: '#D4AF37',
+                  bgColor: '#fffbe6',
+                },
+                {
+                  icon: remainingBudget >= 0
+                    ? <CalendarOutlined style={{ fontSize: 20, color: '#52c41a' }} />
+                    : <CalendarOutlined style={{ fontSize: 20, color: '#ff4d4f' }} />,
+                  label: remainingBudget >= 0 ? 'Remaining Budget' : 'Over Budget',
+                  value: Math.abs(remainingBudget),
+                  color: remainingBudget >= 0 ? '#52c41a' : '#ff4d4f',
+                  bgColor: remainingBudget >= 0 ? '#f6ffed' : '#fff1f0',
+                },
+              ]}
+              renderItem={(item) => (
+                <List.Item
+                  style={{
+                    padding: isMobile ? '12px' : '16px',
+                    background: item.bgColor,
+                    borderRadius: 8,
+                    marginBottom: 12,
+                  }}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <div
+                        style={{
+                          width: isMobile ? 40 : 48,
+                          height: isMobile ? 40 : 48,
+                          borderRadius: '50%',
+                          background: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        }}
+                      >
+                        {item.icon}
+                      </div>
+                    }
+                    title={
+                      <Text style={{ fontSize: isMobile ? 13 : 14, color: '#666' }}>
+                        {item.label}
+                      </Text>
+                    }
+                    description={
+                      <Title
+                        level={isMobile ? 4 : 3}
+                        style={{
+                          margin: '4px 0 0 0',
+                          color: item.color,
+                          fontWeight: 600,
+                        }}
+                      >
+                        ₱{item.value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </Title>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+
+            {/* No Budget Alert */}
+            {totalBudget === 0 && (
+              <Alert
+                message="No Budget Set"
+                description={`You haven't set a budget for ${selectedMonth.format('MMMM YYYY')}. Click "Add" to set your monthly budget.`}
+                type="info"
+                showIcon
+                style={{ borderRadius: 8, marginTop: 12 }}
+              />
+            )}
+          </Card>
+
           {/* Profile Details Card */}
           <Card
             title={
@@ -305,17 +487,6 @@ export default function ProfilePage() {
                 <Divider style={{ margin: 0 }} />
 
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12}>
-                    <Space direction="vertical" size={4}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        ROLE
-                      </Text>
-                      <Text strong style={{ fontSize: 16, textTransform: 'capitalize' }}>
-                        {profile?.role}
-                      </Text>
-                    </Space>
-                  </Col>
-
                   <Col xs={24} sm={12}>
                     <Space direction="vertical" size={4}>
                       <Text type="secondary" style={{ fontSize: 12 }}>

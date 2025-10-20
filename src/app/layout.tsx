@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { AntdRegistry } from '@/lib/antd/AntdRegistry'
 import { TRPCProvider } from '@/lib/trpc/client'
 import { AuthProvider } from '@/lib/auth/useUser'
+import { AppProvider } from '@/lib/antd/AppProvider'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -20,7 +21,9 @@ export default function RootLayout({
       <body>
         <AntdRegistry>
           <TRPCProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <AppProvider>{children}</AppProvider>
+            </AuthProvider>
           </TRPCProvider>
         </AntdRegistry>
       </body>

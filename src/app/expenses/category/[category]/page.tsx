@@ -1,15 +1,20 @@
 'use client'
 
 import { useRouter, useParams } from 'next/navigation'
-import { Layout, Card, Button, Typography, List, Space, Tag, DatePicker } from 'antd'
+import { Layout, Card, Button, Typography, List, Space, Tag, DatePicker, Popconfirm } from 'antd'
 import {
   ArrowLeftOutlined,
   CalendarOutlined,
   FileTextOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  DownOutlined,
+  UpOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import dayjs, { Dayjs } from 'dayjs'
 import { trpc } from '@/lib/trpc/client'
+import { useMessage } from '@/lib/antd/useMessage'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -20,6 +25,8 @@ export default function CategoryDetailsPage() {
   const categoryName = decodeURIComponent(params.category as string)
   const [isMobile, setIsMobile] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs())
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const message = useMessage()
 
   useEffect(() => {
     const checkMobile = () => {
@@ -33,9 +40,20 @@ export default function CategoryDetailsPage() {
   }, [])
 
   // Fetch expenses for the selected category and month
-  const { data: expenses = [] } = trpc.expense.getAll.useQuery({
+  const { data: expenses = [], refetch: refetchExpenses } = trpc.expense.getAll.useQuery({
     month: selectedMonth.format('YYYY-MM'),
     category: categoryName,
+  })
+
+  // Delete expense mutation
+  const deleteExpenseMutation = trpc.expense.delete.useMutation({
+    onSuccess: () => {
+      message.success('Expense deleted successfully!')
+      refetchExpenses()
+    },
+    onError: (error) => {
+      message.error(error.message || 'Failed to delete expense')
+    },
   })
 
   const totalAmount = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0)
@@ -44,6 +62,27 @@ export default function CategoryDetailsPage() {
     if (date) {
       setSelectedMonth(date)
     }
+  }
+
+  const handleDelete = (expenseId: string) => {
+    deleteExpenseMutation.mutate({ id: expenseId })
+  }
+
+  const handleEdit = (expenseId: string) => {
+    // Navigate to edit page (you can create this page later)
+    router.push(`/expenses/edit/${expenseId}`)
+  }
+
+  const toggleExpanded = (expenseId: string) => {
+    setExpandedIds((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(expenseId)) {
+        newSet.delete(expenseId)
+      } else {
+        newSet.add(expenseId)
+      }
+      return newSet
+    })
   }
 
   return (
@@ -144,42 +183,95 @@ export default function CategoryDetailsPage() {
                       borderRadius: 8,
                     }}
                   >
-                    <List.Item.Meta
-                      avatar={
-                        <div
-                          style={{
-                            width: isMobile ? 40 : 48,
-                            height: isMobile ? 40 : 48,
-                            borderRadius: '50%',
-                            background: '#f0f4f8',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#003366',
-                            fontSize: isMobile ? 18 : 20,
-                          }}
-                        >
-                          <FileTextOutlined />
-                        </div>
-                      }
-                      title={
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                          <span style={{ fontSize: isMobile ? 15 : 16, fontWeight: 500 }}>
-                            {expense.description}
-                          </span>
-                          <Text strong style={{ fontSize: isMobile ? 16 : 18, color: '#003366', whiteSpace: 'nowrap' }}>
-                            ₱{expense.amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </Text>
-                        </div>
-                      }
-                      description={
-                        <div style={{ marginTop: 4 }}>
+                    <div style={{ display: 'flex', width: '100%', gap: 16, alignItems: 'flex-start' }}>
+                      {/* Avatar */}
+                      <div
+                        style={{
+                          width: isMobile ? 40 : 48,
+                          height: isMobile ? 40 : 48,
+                          borderRadius: '50%',
+                          background: '#f0f4f8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#003366',
+                          fontSize: isMobile ? 18 : 20,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <FileTextOutlined />
+                      </div>
+
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ marginBottom: 4 }}>
                           <Tag color="blue" style={{ fontSize: isMobile ? 12 : 13 }}>
                             {dayjs(expense.expense_date).format('MMM DD, YYYY')}
                           </Tag>
                         </div>
-                      }
-                    />
+                        <div
+                          onClick={() => toggleExpanded(expense.id)}
+                          style={{
+                            fontSize: isMobile ? 15 : 16,
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            textOverflow: expandedIds.has(expense.id) ? 'unset' : 'ellipsis',
+                            whiteSpace: expandedIds.has(expense.id) ? 'normal' : 'nowrap',
+                            wordBreak: expandedIds.has(expense.id) ? 'break-word' : 'normal',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <span style={{ flex: 1, minWidth: 0 }}>{expense.description}</span>
+                          {expense.description.length > 50 && (
+                            expandedIds.has(expense.id) ? (
+                              <UpOutlined style={{ fontSize: 10, color: '#666', flexShrink: 0 }} />
+                            ) : (
+                              <DownOutlined style={{ fontSize: 10, color: '#666', flexShrink: 0 }} />
+                            )
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Amount and Actions Container */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                        <Text strong style={{ fontSize: isMobile ? 16 : 18, color: '#003366', whiteSpace: 'nowrap' }}>
+                          ₱{expense.amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </Text>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <Button
+                            type="text"
+                            icon={<EditOutlined style={{ color: '#003366' }} />}
+                            onClick={() => handleEdit(expense.id)}
+                            size={isMobile ? 'small' : 'middle'}
+                          >
+                            {!isMobile && 'Edit'}
+                          </Button>
+                          <Popconfirm
+                            title="Delete Expense"
+                            description="Are you sure you want to delete this expense?"
+                            onConfirm={() => handleDelete(expense.id)}
+                            okText="Yes"
+                            cancelText="No"
+                            okButtonProps={{
+                              loading: deleteExpenseMutation.isPending,
+                              danger: true,
+                            }}
+                          >
+                            <Button
+                              type="text"
+                              icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />}
+                              danger
+                              size={isMobile ? 'small' : 'middle'}
+                            >
+                              {!isMobile && 'Delete'}
+                            </Button>
+                          </Popconfirm>
+                        </div>
+                      </div>
+                    </div>
                   </List.Item>
                 )}
               />

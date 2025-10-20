@@ -131,9 +131,27 @@ When adding new tRPC procedures:
 
 All pages use Ant Design components with SSR support:
 - **AntdRegistry** - Wraps the app to enable CSS-in-JS server-side rendering
+- **App Component** - **CRITICAL** - NEVER use static `message`, `modal`, or `notification` from antd imports. ALWAYS use the `useMessage`, `useModal`, or `useNotification` hooks from `@/lib/antd/useMessage` to access these APIs through the App context. This is required for theme integration and prevents context warnings.
+  ```typescript
+  // ❌ WRONG - Do not do this
+  import { message } from 'antd'
+  message.success('Success!')
+
+  // ✅ CORRECT - Always use the hook
+  import { useMessage } from '@/lib/antd/useMessage'
+  const message = useMessage()
+  message.success('Success!')
+  ```
 - **Forms**: Use `Form.Item` with validation rules
 - **Layouts**: Dashboard uses `Layout`, `Header`, `Content` structure
 - **Loading states**: Use `Spin` component or button `loading` prop (note: use `isPending` instead of `isLoading` for tRPC v11)
+- **Button Processing States**: **CRITICAL** - All buttons that trigger data operations (get, create, update, delete) MUST have a loading/processing state to prevent double-clicking. Use the `loading` prop on Ant Design buttons with tRPC's `isPending` state:
+  ```typescript
+  const mutation = trpc.yourFeature.createItem.useMutation()
+  <Button loading={mutation.isPending} onClick={() => mutation.mutate({...})}>
+    Submit
+  </Button>
+  ```
 - **Errors**: Display with `Alert` component
 - **Icons**: Import from `@ant-design/icons`
 - **Mobile Responsiveness**: Always make the UI mobile responsive. Use Ant Design's Grid system (`Row`, `Col` with responsive breakpoints) and responsive utilities. Test layouts on mobile, tablet, and desktop viewports.
@@ -267,3 +285,4 @@ const protectedPaths = ['/dashboard', '/your-new-protected-route']
 - **tRPC v11 Changes**: Use `isPending` instead of `isLoading` for mutation/query states
 - **Middleware**: Runs on edge runtime - keep it lightweight and avoid heavy computations
 - **Environment Variables**: Use `NEXT_PUBLIC_` prefix for client-accessible variables
+- Add to memory, "add number type to all input fields expecting number (eg. amount)"

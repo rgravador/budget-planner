@@ -162,7 +162,7 @@ export default function DashboardPage() {
                 </Col>
               </Row>
 
-              {/* Total Expenses and Action Buttons */}
+              {/* Total Expenses and Action Button */}
               <Row gutter={[16, 16]} align="middle">
                 <Col xs={24} lg={12}>
                   <div>
@@ -175,31 +175,13 @@ export default function DashboardPage() {
                   </div>
                 </Col>
                 <Col xs={24} lg={12}>
-                  <Space
-                    direction={isMobile ? 'vertical' : 'horizontal'}
-                    size="middle"
+                  <div
                     style={{
-                      width: '100%',
+                      display: 'flex',
                       justifyContent: isMobile ? 'flex-start' : 'flex-end',
-                      display: 'flex'
+                      width: '100%'
                     }}
                   >
-                    <Button
-                      type="default"
-                      size="large"
-                      icon={"₱"}
-                      onClick={() => router.push('/income/new')}
-                      style={{
-                        borderColor: '#D4AF37',
-                        color: '#ffffff',
-                        background: 'rgba(212, 175, 55, 0.2)',
-                        fontWeight: 500,
-                        height: isMobile ? 48 : 56,
-                        width: isMobile ? '100%' : 'auto',
-                      }}
-                    >
-                      Add Income
-                    </Button>
                     <Button
                       type="primary"
                       size="large"
@@ -216,7 +198,7 @@ export default function DashboardPage() {
                     >
                       Add New Expense
                     </Button>
-                  </Space>
+                  </div>
                 </Col>
               </Row>
             </Space>

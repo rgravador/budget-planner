@@ -1,8 +1,8 @@
 import { router, protectedProcedure } from '../trpc'
 import { z } from 'zod'
 
-export const incomeRouter = router({
-  // Get all income for the authenticated user
+export const budgetRouter = router({
+  // Get all budget for the authenticated user
   getAll: protectedProcedure
     .input(
       z
@@ -13,14 +13,14 @@ export const incomeRouter = router({
     )
     .query(async ({ ctx, input }) => {
       let query = ctx.supabase
-        .from('income')
+        .from('budget')
         .select('*')
         .eq('user_id', ctx.session.user.id)
-        .order('income_month', { ascending: false })
+        .order('budget_month', { ascending: false })
 
       // Filter by month if provided
       if (input?.month) {
-        query = query.eq('income_month', `${input.month}-01`)
+        query = query.eq('budget_month', `${input.month}-01`)
       }
 
       const { data, error } = await query
@@ -32,7 +32,7 @@ export const incomeRouter = router({
       return data || []
     }),
 
-  // Get income for a specific month
+  // Get budget for a specific month
   getByMonth: protectedProcedure
     .input(
       z.object({
@@ -41,10 +41,10 @@ export const incomeRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { data, error } = await ctx.supabase
-        .from('income')
+        .from('budget')
         .select('*')
         .eq('user_id', ctx.session.user.id)
-        .eq('income_month', `${input.month}-01`)
+        .eq('budget_month', `${input.month}-01`)
         .maybeSingle()
 
       if (error) {
@@ -54,27 +54,27 @@ export const incomeRouter = router({
       return data
     }),
 
-  // Create a new income record
+  // Create a new budget record
   create: protectedProcedure
     .input(
       z.object({
         amount: z.number().positive('Amount must be greater than 0'),
-        incomeMonth: z.string(), // Format: YYYY-MM
+        budgetMonth: z.string(), // Format: YYYY-MM
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if income for this month already exists
+      // Check if budget for this month already exists
       const { data: existing } = await ctx.supabase
-        .from('income')
+        .from('budget')
         .select('id')
         .eq('user_id', ctx.session.user.id)
-        .eq('income_month', `${input.incomeMonth}-01`)
+        .eq('budget_month', `${input.budgetMonth}-01`)
         .maybeSingle()
 
       if (existing) {
-        // Update existing income
+        // Update existing budget
         const { data, error } = await ctx.supabase
-          .from('income')
+          .from('budget')
           .update({
             amount: input.amount,
           })
@@ -89,13 +89,13 @@ export const incomeRouter = router({
 
         return data
       } else {
-        // Create new income
+        // Create new budget
         const { data, error } = await ctx.supabase
-          .from('income')
+          .from('budget')
           .insert({
             user_id: ctx.session.user.id,
             amount: input.amount,
-            income_month: `${input.incomeMonth}-01`,
+            budget_month: `${input.budgetMonth}-01`,
           })
           .select()
           .single()
@@ -108,7 +108,7 @@ export const incomeRouter = router({
       }
     }),
 
-  // Update an income record
+  // Update a budget record
   update: protectedProcedure
     .input(
       z.object({
@@ -118,7 +118,7 @@ export const incomeRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { data, error } = await ctx.supabase
-        .from('income')
+        .from('budget')
         .update({
           amount: input.amount,
         })
@@ -134,7 +134,7 @@ export const incomeRouter = router({
       return data
     }),
 
-  // Delete an income record
+  // Delete a budget record
   delete: protectedProcedure
     .input(
       z.object({
@@ -143,7 +143,7 @@ export const incomeRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { error } = await ctx.supabase
-        .from('income')
+        .from('budget')
         .delete()
         .eq('id', input.id)
         .eq('user_id', ctx.session.user.id)

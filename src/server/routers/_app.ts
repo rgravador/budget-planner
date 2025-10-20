@@ -1,13 +1,13 @@
 import { router } from '../trpc'
 import { authRouter } from './auth'
 import { expenseRouter } from './expense'
-import { incomeRouter } from './income'
+import { budgetRouter } from './budget'
 import { categoryRouter } from './category'
 
 export const appRouter = router({
   auth: authRouter,
   expense: expenseRouter,
-  income: incomeRouter,
+  budget: budgetRouter,
   category: categoryRouter,
 })
 

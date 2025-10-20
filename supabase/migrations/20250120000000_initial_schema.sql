@@ -118,44 +118,44 @@ CREATE POLICY "Users can delete their own expenses"
     USING (auth.uid() = user_id);
 
 -- =====================================================
--- INCOME TABLE
+-- BUDGET TABLE
 -- =====================================================
--- Income tracking table
-CREATE TABLE IF NOT EXISTS income (
+-- Budget tracking table
+CREATE TABLE IF NOT EXISTS budget (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES expense_users(id) ON DELETE CASCADE,
     amount DECIMAL(12, 2) NOT NULL CHECK (amount > 0),
-    income_month DATE NOT NULL,
+    budget_month DATE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create index for faster queries
-CREATE INDEX idx_income_user_id ON income(user_id);
-CREATE INDEX idx_income_month ON income(income_month);
-CREATE INDEX idx_income_user_month ON income(user_id, income_month);
+CREATE INDEX idx_budget_user_id ON budget(user_id);
+CREATE INDEX idx_budget_month ON budget(budget_month);
+CREATE INDEX idx_budget_user_month ON budget(user_id, budget_month);
 
 -- Enable RLS
-ALTER TABLE income ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budget ENABLE ROW LEVEL SECURITY;
 
--- Policies for income
-CREATE POLICY "Users can view their own income"
-    ON income
+-- Policies for budget
+CREATE POLICY "Users can view their own budget"
+    ON budget
     FOR SELECT
     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own income"
-    ON income
+CREATE POLICY "Users can insert their own budget"
+    ON budget
     FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own income"
-    ON income
+CREATE POLICY "Users can update their own budget"
+    ON budget
     FOR UPDATE
     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own income"
-    ON income
+CREATE POLICY "Users can delete their own budget"
+    ON budget
     FOR DELETE
     USING (auth.uid() = user_id);
 
@@ -188,8 +188,8 @@ CREATE TRIGGER update_expenses_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_income_updated_at
-    BEFORE UPDATE ON income
+CREATE TRIGGER update_budget_updated_at
+    BEFORE UPDATE ON budget
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
@@ -271,18 +271,18 @@ SELECT
     e.user_id,
     DATE_TRUNC('month', e.expense_date) AS month,
     COALESCE(SUM(e.amount), 0) AS total_expenses,
-    COALESCE(i.total_income, 0) AS total_income,
-    COALESCE(i.total_income, 0) - COALESCE(SUM(e.amount), 0) AS balance
+    COALESCE(b.total_budget, 0) AS total_budget,
+    COALESCE(b.total_budget, 0) - COALESCE(SUM(e.amount), 0) AS balance
 FROM expenses e
 LEFT JOIN (
     SELECT
         user_id,
-        DATE_TRUNC('month', income_month) AS month,
-        SUM(amount) AS total_income
-    FROM income
-    GROUP BY user_id, DATE_TRUNC('month', income_month)
-) i ON e.user_id = i.user_id AND DATE_TRUNC('month', e.expense_date) = i.month
-GROUP BY e.user_id, DATE_TRUNC('month', e.expense_date), i.total_income;
+        DATE_TRUNC('month', budget_month) AS month,
+        SUM(amount) AS total_budget
+    FROM budget
+    GROUP BY user_id, DATE_TRUNC('month', budget_month)
+) b ON e.user_id = b.user_id AND DATE_TRUNC('month', e.expense_date) = b.month
+GROUP BY e.user_id, DATE_TRUNC('month', e.expense_date), b.total_budget;
 
 -- Grant access to views
 GRANT SELECT ON monthly_expense_summary TO authenticated;
@@ -295,6 +295,6 @@ GRANT SELECT ON monthly_totals TO authenticated;
 COMMENT ON TABLE expense_users IS 'Main users table for expense tracking application';
 COMMENT ON TABLE categories IS 'User-defined expense categories';
 COMMENT ON TABLE expenses IS 'User expense records';
-COMMENT ON TABLE income IS 'User income records by month';
+COMMENT ON TABLE budget IS 'User budget records by month';
 COMMENT ON COLUMN expense_users.role IS 'User role: tracker (default) or admin';
 COMMENT ON COLUMN categories.is_default IS 'Whether this is a default category seeded by the system';

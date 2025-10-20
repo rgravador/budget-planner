@@ -43,6 +43,28 @@ export const expenseRouter = router({
       return data || []
     }),
 
+  // Get a single expense by ID
+  getById: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { data, error } = await ctx.supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', input.id)
+        .eq('user_id', ctx.session.user.id)
+        .single()
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return data
+    }),
+
   // Get expenses grouped by category for a specific month
   getByCategory: protectedProcedure
     .input(

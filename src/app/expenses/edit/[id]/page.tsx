@@ -1,7 +1,7 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { Layout, Card, Button, Form, Input, InputNumber, Select, Typography, Space } from 'antd'
+import { useRouter, useParams } from 'next/navigation'
+import { Layout, Card, Button, Form, Input, InputNumber, Select, Typography, Space, Spin } from 'antd'
 import {
   ArrowLeftOutlined,
   TagOutlined,
@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from 'react'
 import { trpc } from '@/lib/trpc/client'
 import { useMessage } from '@/lib/antd/useMessage'
+import dayjs from 'dayjs'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -22,8 +23,10 @@ interface ExpenseFormValues {
   amount: number
 }
 
-export default function NewExpensePage() {
+export default function EditExpensePage() {
   const router = useRouter()
+  const params = useParams()
+  const expenseId = params.id as string
   const [form] = Form.useForm()
   const [isMobile, setIsMobile] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -40,17 +43,22 @@ export default function NewExpensePage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Fetch the expense to edit
+  const { data: expense, isLoading } = trpc.expense.getById.useQuery({
+    id: expenseId,
+  })
+
   // Fetch categories
   const { data: categories = [], refetch: refetchCategories } = trpc.category.getAll.useQuery()
 
-  // Create expense mutation
-  const createExpenseMutation = trpc.expense.create.useMutation({
+  // Update expense mutation
+  const updateExpenseMutation = trpc.expense.update.useMutation({
     onSuccess: () => {
-      message.success('Expense saved successfully!')
+      message.success('Expense updated successfully!')
       router.push('/dashboard')
     },
     onError: (error) => {
-      message.error(error.message || 'Failed to save expense')
+      message.error(error.message || 'Failed to update expense')
     },
   })
 
@@ -67,17 +75,29 @@ export default function NewExpensePage() {
     },
   })
 
+  // Set form values when expense data is loaded
+  useEffect(() => {
+    if (expense) {
+      form.setFieldsValue({
+        category: expense.category,
+        description: expense.description,
+        amount: parseFloat(expense.amount),
+      })
+    }
+  }, [expense, form])
+
   const handleSubmit = (values: ExpenseFormValues) => {
-    createExpenseMutation.mutate({
+    updateExpenseMutation.mutate({
+      id: expenseId,
       category: values.category,
       description: values.description,
       amount: values.amount,
-      expenseDate: new Date().toISOString().split('T')[0],
+      expenseDate: expense?.expense_date,
     })
   }
 
   const handleCancel = () => {
-    router.push('/dashboard')
+    router.back()
   }
 
   const handleAddCategory = () => {
@@ -92,6 +112,31 @@ export default function NewExpensePage() {
   const handleAddCategoryClick = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     e.preventDefault()
     handleAddCategory()
+  }
+
+  if (isLoading) {
+    return (
+      <Layout style={{ minHeight: '100vh' }}>
+        <Content style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <Spin size="large" />
+        </Content>
+      </Layout>
+    )
+  }
+
+  if (!expense) {
+    return (
+      <Layout style={{ minHeight: '100vh' }}>
+        <Content style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <Title level={3}>Expense not found</Title>
+            <Button type="primary" onClick={() => router.push('/dashboard')}>
+              Go to Dashboard
+            </Button>
+          </div>
+        </Content>
+      </Layout>
+    )
   }
 
   return (
@@ -113,7 +158,7 @@ export default function NewExpensePage() {
             style={{ padding: isMobile ? '4px 8px' : '4px 15px' }}
           />
           <Title level={isMobile ? 4 : 3} style={{ margin: 0, color: '#ffffff' }}>
-            Add New Expense
+            Edit Expense
           </Title>
         </div>
       </Header>
@@ -133,14 +178,16 @@ export default function NewExpensePage() {
                 <Title level={2} style={{ marginBottom: 8 }}>
                   Expense Details
                 </Title>
-                <Text type="secondary">Fill in the information below</Text>
+                <Text type="secondary">Update the information below</Text>
+                <Text type="secondary" style={{ display: 'block', marginTop: 8, fontSize: 12 }}>
+                  Created: {dayjs(expense.expense_date).format('MMM DD, YYYY')}
+                </Text>
               </div>
 
               <Form
                 form={form}
                 layout="vertical"
                 onFinish={handleSubmit}
-                autoComplete="off"
                 size="large"
               >
                 <Form.Item
@@ -149,24 +196,20 @@ export default function NewExpensePage() {
                   rules={[{ required: true, message: 'Please select a category!' }]}
                 >
                   <Select
-                    placeholder="Select or search category"
+                    placeholder="Select a category"
                     suffixIcon={<TagOutlined />}
-                    style={{ fontSize: 16 }}
+                    style={{ width: '100%', fontSize: 16 }}
                     size="large"
-                    showSearch
-                    filterOption={(input, option) =>
-                      ((option?.label || option?.children) as string).toLowerCase().includes(input.toLowerCase())
-                    }
                     dropdownRender={(menu) => (
                       <>
                         {menu}
-                        <div style={{ padding: '8px', borderTop: '1px solid #d9d9d9' }}>
-                          <Space style={{ width: '100%' }}>
+                        <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                          <Space style={{ width: '100%', marginBottom: 8 }}>
                             <Input
                               placeholder="New category name"
                               value={newCategoryName}
                               onChange={(e) => setNewCategoryName(e.target.value)}
-                              onPressEnter={() => handleAddCategory()}
+                              onPressEnter={handleAddCategory}
                               style={{ flex: 1 }}
                             />
                             <Button
@@ -182,9 +225,9 @@ export default function NewExpensePage() {
                       </>
                     )}
                   >
-                    {categories.map((category) => (
-                      <Select.Option key={category.id} value={category.name}>
-                        {category.name}
+                    {categories.map((cat) => (
+                      <Select.Option key={cat.id} value={cat.name}>
+                        {cat.name}
                       </Select.Option>
                     ))}
                   </Select>
@@ -199,7 +242,7 @@ export default function NewExpensePage() {
                   ]}
                 >
                   <TextArea
-                    placeholder="Enter expense description"
+                    placeholder="What did you buy?"
                     rows={4}
                     style={{ fontSize: 16 }}
                   />
@@ -207,7 +250,7 @@ export default function NewExpensePage() {
 
                 <Form.Item
                   name="amount"
-                  label={<span style={{ fontSize: 16, fontWeight: 500 }}>Amount</span>}
+                  label={<span style={{ fontSize: 16, fontWeight: 500 }}>Amount (₱)</span>}
                   rules={[
                     { required: true, message: 'Please enter an amount!' },
                     { type: 'number', min: 0.01, message: 'Amount must be greater than 0!' },
@@ -216,7 +259,7 @@ export default function NewExpensePage() {
                   <InputNumber
                     type="number"
                     placeholder="0.00"
-                    addonBefore="₱"
+                    prefix="₱"
                     style={{ width: '100%', fontSize: 16 }}
                     precision={2}
                     min={0}
@@ -230,7 +273,7 @@ export default function NewExpensePage() {
                       type="primary"
                       htmlType="submit"
                       icon={<SaveOutlined />}
-                      loading={createExpenseMutation.isPending}
+                      loading={updateExpenseMutation.isPending}
                       size="large"
                       block
                       style={{
@@ -239,7 +282,7 @@ export default function NewExpensePage() {
                         fontWeight: 600,
                       }}
                     >
-                      {createExpenseMutation.isPending ? 'Saving...' : 'Save Expense'}
+                      {updateExpenseMutation.isPending ? 'Saving...' : 'Save Changes'}
                     </Button>
                     <Button
                       onClick={handleCancel}
@@ -247,7 +290,7 @@ export default function NewExpensePage() {
                       block
                       style={{
                         height: 56,
-                        fontSize: 16,
+                        fontSize: 18,
                       }}
                     >
                       Cancel
@@ -264,15 +307,16 @@ export default function NewExpensePage() {
                 <Title level={2} style={{ marginBottom: 8 }}>
                   Expense Details
                 </Title>
-                <Text type="secondary">Fill in the information below</Text>
+                <Text type="secondary">Update the information below</Text>
+                <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+                  Created: {dayjs(expense.expense_date).format('MMMM DD, YYYY')}
+                </Text>
               </div>
 
               <Form
                 form={form}
                 layout="vertical"
                 onFinish={handleSubmit}
-                autoComplete="off"
-                size="large"
               >
                 <Form.Item
                   name="category"
@@ -280,22 +324,19 @@ export default function NewExpensePage() {
                   rules={[{ required: true, message: 'Please select a category!' }]}
                 >
                   <Select
-                    placeholder="Select or search category"
+                    placeholder="Select a category"
                     suffixIcon={<TagOutlined />}
-                    showSearch
-                    filterOption={(input, option) =>
-                      ((option?.label || option?.children) as string).toLowerCase().includes(input.toLowerCase())
-                    }
+                    style={{ width: '100%' }}
                     dropdownRender={(menu) => (
                       <>
                         {menu}
-                        <div style={{ padding: '8px', borderTop: '1px solid #d9d9d9' }}>
-                          <Space style={{ width: '100%' }}>
+                        <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                          <Space style={{ width: '100%', marginBottom: 8 }}>
                             <Input
                               placeholder="New category name"
                               value={newCategoryName}
                               onChange={(e) => setNewCategoryName(e.target.value)}
-                              onPressEnter={() => handleAddCategory()}
+                              onPressEnter={handleAddCategory}
                               style={{ flex: 1 }}
                             />
                             <Button
@@ -311,9 +352,9 @@ export default function NewExpensePage() {
                       </>
                     )}
                   >
-                    {categories.map((category) => (
-                      <Select.Option key={category.id} value={category.name}>
-                        {category.name}
+                    {categories.map((cat) => (
+                      <Select.Option key={cat.id} value={cat.name}>
+                        {cat.name}
                       </Select.Option>
                     ))}
                   </Select>
@@ -328,14 +369,14 @@ export default function NewExpensePage() {
                   ]}
                 >
                   <TextArea
-                    placeholder="Enter expense description"
+                    placeholder="What did you buy?"
                     rows={4}
                   />
                 </Form.Item>
 
                 <Form.Item
                   name="amount"
-                  label="Amount"
+                  label="Amount (₱)"
                   rules={[
                     { required: true, message: 'Please enter an amount!' },
                     { type: 'number', min: 0.01, message: 'Amount must be greater than 0!' },
@@ -344,7 +385,7 @@ export default function NewExpensePage() {
                   <InputNumber
                     type="number"
                     placeholder="0.00"
-                    addonBefore="₱"
+                    prefix="₱"
                     style={{ width: '100%' }}
                     precision={2}
                     min={0}
@@ -353,8 +394,8 @@ export default function NewExpensePage() {
 
                 <Form.Item style={{ marginBottom: 0, marginTop: 32 }}>
                   <Space>
-                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={createExpenseMutation.isPending} size="large">
-                      {createExpenseMutation.isPending ? 'Saving...' : 'Save Expense'}
+                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={updateExpenseMutation.isPending} size="large">
+                      {updateExpenseMutation.isPending ? 'Saving...' : 'Save Changes'}
                     </Button>
                     <Button onClick={handleCancel} size="large">
                       Cancel

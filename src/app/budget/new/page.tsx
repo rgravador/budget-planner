@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Layout, Card, Button, Form, InputNumber, DatePicker, Typography, Space, message } from 'antd'
+import { Layout, Card, Button, Form, InputNumber, DatePicker, Typography, Space } from 'antd'
 import {
   ArrowLeftOutlined,
   CalendarOutlined,
@@ -10,19 +10,21 @@ import {
 import { useEffect, useState } from 'react'
 import dayjs, { Dayjs } from 'dayjs'
 import { trpc } from '@/lib/trpc/client'
+import { useMessage } from '@/lib/antd/useMessage'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
 
-interface IncomeFormValues {
+interface BudgetFormValues {
   amount: number
   month: Dayjs
 }
 
-export default function NewIncomePage() {
+export default function NewBudgetPage() {
   const router = useRouter()
   const [form] = Form.useForm()
   const [isMobile, setIsMobile] = useState(false)
+  const message = useMessage()
 
   useEffect(() => {
     const checkMobile = () => {
@@ -35,21 +37,21 @@ export default function NewIncomePage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Create income mutation
-  const createIncomeMutation = trpc.income.create.useMutation({
+  // Create budget mutation
+  const createBudgetMutation = trpc.budget.create.useMutation({
     onSuccess: () => {
-      message.success('Income saved successfully!')
+      message.success('Budget saved successfully!')
       router.push('/dashboard')
     },
     onError: (error) => {
-      message.error(error.message || 'Failed to save income')
+      message.error(error.message || 'Failed to save budget')
     },
   })
 
-  const handleSubmit = (values: IncomeFormValues) => {
-    createIncomeMutation.mutate({
+  const handleSubmit = (values: BudgetFormValues) => {
+    createBudgetMutation.mutate({
       amount: values.amount,
-      incomeMonth: values.month.format('YYYY-MM'),
+      budgetMonth: values.month.format('YYYY-MM'),
     })
   }
 
@@ -76,7 +78,7 @@ export default function NewIncomePage() {
             style={{ padding: isMobile ? '4px 8px' : '4px 15px' }}
           />
           <Title level={isMobile ? 4 : 3} style={{ margin: 0, color: '#ffffff' }}>
-            Add New Income
+            Add New Budget
           </Title>
         </div>
       </Header>
@@ -94,7 +96,7 @@ export default function NewIncomePage() {
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
                 <Title level={2} style={{ marginBottom: 8 }}>
-                  Income Details
+                  Budget Details
                 </Title>
                 <Text type="secondary">Fill in the information below</Text>
               </div>
@@ -111,13 +113,14 @@ export default function NewIncomePage() {
               >
                 <Form.Item
                   name="amount"
-                  label={<span style={{ fontSize: 16, fontWeight: 500 }}>Income Amount</span>}
+                  label={<span style={{ fontSize: 16, fontWeight: 500 }}>Budget Amount</span>}
                   rules={[
                     { required: true, message: 'Please enter an amount!' },
                     { type: 'number', min: 0.01, message: 'Amount must be greater than 0!' },
                   ]}
                 >
                   <InputNumber
+                    type="number"
                     placeholder="0.00"
                     prefix="₱"
                     style={{ width: '100%', fontSize: 16 }}
@@ -129,7 +132,7 @@ export default function NewIncomePage() {
 
                 <Form.Item
                   name="month"
-                  label={<span style={{ fontSize: 16, fontWeight: 500 }}>Income Month</span>}
+                  label={<span style={{ fontSize: 16, fontWeight: 500 }}>Budget Month</span>}
                   rules={[{ required: true, message: 'Please select a month!' }]}
                 >
                   <DatePicker
@@ -147,6 +150,7 @@ export default function NewIncomePage() {
                       type="primary"
                       htmlType="submit"
                       icon={<SaveOutlined />}
+                      loading={createBudgetMutation.isPending}
                       size="large"
                       block
                       style={{
@@ -155,7 +159,7 @@ export default function NewIncomePage() {
                         fontWeight: 600,
                       }}
                     >
-                      Save Income
+                      {createBudgetMutation.isPending ? 'Saving...' : 'Save Budget'}
                     </Button>
                     <Button
                       onClick={handleCancel}
@@ -178,7 +182,7 @@ export default function NewIncomePage() {
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
                 <Title level={2} style={{ marginBottom: 8 }}>
-                  Income Details
+                  Budget Details
                 </Title>
                 <Text type="secondary">Fill in the information below</Text>
               </div>
@@ -195,13 +199,14 @@ export default function NewIncomePage() {
               >
                 <Form.Item
                   name="amount"
-                  label="Income Amount"
+                  label="Budget Amount"
                   rules={[
                     { required: true, message: 'Please enter an amount!' },
                     { type: 'number', min: 0.01, message: 'Amount must be greater than 0!' },
                   ]}
                 >
                   <InputNumber
+                    type="number"
                     placeholder="0.00"
                     prefix="₱"
                     style={{ width: '100%' }}
@@ -212,7 +217,7 @@ export default function NewIncomePage() {
 
                 <Form.Item
                   name="month"
-                  label="Income Month"
+                  label="Budget Month"
                   rules={[{ required: true, message: 'Please select a month!' }]}
                 >
                   <DatePicker
@@ -225,8 +230,8 @@ export default function NewIncomePage() {
 
                 <Form.Item style={{ marginBottom: 0, marginTop: 32 }}>
                   <Space>
-                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} size="large">
-                      Save Income
+                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={createBudgetMutation.isPending} size="large">
+                      {createBudgetMutation.isPending ? 'Saving...' : 'Save Budget'}
                     </Button>
                     <Button onClick={handleCancel} size="large">
                       Cancel
