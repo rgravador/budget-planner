@@ -4,12 +4,11 @@ import { useRouter } from 'next/navigation'
 import { Layout, Card, Button, Form, Input, InputNumber, Select, Typography, Space, message } from 'antd'
 import {
   ArrowLeftOutlined,
-  FileTextOutlined,
   TagOutlined,
   SaveOutlined,
   PlusOutlined,
 } from '@ant-design/icons'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { trpc } from '@/lib/trpc/client'
 
 const { Header, Content } = Layout
@@ -27,7 +26,6 @@ export default function NewExpensePage() {
   const [form] = Form.useForm()
   const [isMobile, setIsMobile] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
-  const inputRef = useRef<any>(null)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -80,17 +78,18 @@ export default function NewExpensePage() {
     router.push('/dashboard')
   }
 
-  const handleAddCategory = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
-    e.preventDefault()
+  const handleAddCategory = () => {
     if (newCategoryName) {
       createCategoryMutation.mutate({
         name: newCategoryName,
         icon: 'TagOutlined',
       })
     }
-    setTimeout(() => {
-      inputRef.current?.focus()
-    }, 0)
+  }
+
+  const handleAddCategoryClick = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+    e.preventDefault()
+    handleAddCategory()
   }
 
   return (
@@ -148,14 +147,13 @@ export default function NewExpensePage() {
                   rules={[{ required: true, message: 'Please select a category!' }]}
                 >
                   <Select
-                    ref={inputRef}
                     placeholder="Select or search category"
                     suffixIcon={<TagOutlined />}
                     style={{ fontSize: 16 }}
                     size="large"
                     showSearch
                     filterOption={(input, option) =>
-                      (option?.children as string).toLowerCase().includes(input.toLowerCase())
+                      ((option?.label || option?.children) as string).toLowerCase().includes(input.toLowerCase())
                     }
                     dropdownRender={(menu) => (
                       <>
@@ -166,13 +164,13 @@ export default function NewExpensePage() {
                               placeholder="New category name"
                               value={newCategoryName}
                               onChange={(e) => setNewCategoryName(e.target.value)}
-                              onPressEnter={handleAddCategory}
+                              onPressEnter={() => handleAddCategory()}
                               style={{ flex: 1 }}
                             />
                             <Button
                               type="primary"
                               icon={<PlusOutlined />}
-                              onClick={handleAddCategory}
+                              onClick={handleAddCategoryClick}
                             >
                               Add
                             </Button>
@@ -199,7 +197,6 @@ export default function NewExpensePage() {
                 >
                   <TextArea
                     placeholder="Enter expense description"
-                    prefix={<FileTextOutlined />}
                     rows={4}
                     style={{ fontSize: 16 }}
                   />
@@ -215,7 +212,7 @@ export default function NewExpensePage() {
                 >
                   <InputNumber
                     placeholder="0.00"
-                    prefix="₱"
+                    addonBefore="₱"
                     style={{ width: '100%', fontSize: 16 }}
                     precision={2}
                     min={0}
@@ -278,12 +275,11 @@ export default function NewExpensePage() {
                   rules={[{ required: true, message: 'Please select a category!' }]}
                 >
                   <Select
-                    ref={inputRef}
                     placeholder="Select or search category"
                     suffixIcon={<TagOutlined />}
                     showSearch
                     filterOption={(input, option) =>
-                      (option?.children as string).toLowerCase().includes(input.toLowerCase())
+                      ((option?.label || option?.children) as string).toLowerCase().includes(input.toLowerCase())
                     }
                     dropdownRender={(menu) => (
                       <>
@@ -294,13 +290,13 @@ export default function NewExpensePage() {
                               placeholder="New category name"
                               value={newCategoryName}
                               onChange={(e) => setNewCategoryName(e.target.value)}
-                              onPressEnter={handleAddCategory}
+                              onPressEnter={() => handleAddCategory()}
                               style={{ flex: 1 }}
                             />
                             <Button
                               type="primary"
                               icon={<PlusOutlined />}
-                              onClick={handleAddCategory}
+                              onClick={handleAddCategoryClick}
                             >
                               Add
                             </Button>
@@ -327,7 +323,6 @@ export default function NewExpensePage() {
                 >
                   <TextArea
                     placeholder="Enter expense description"
-                    prefix={<FileTextOutlined />}
                     rows={4}
                   />
                 </Form.Item>
@@ -342,7 +337,7 @@ export default function NewExpensePage() {
                 >
                   <InputNumber
                     placeholder="0.00"
-                    prefix="₱"
+                    addonBefore="₱"
                     style={{ width: '100%' }}
                     precision={2}
                     min={0}

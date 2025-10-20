@@ -18,7 +18,6 @@ import {
   SmileOutlined,
   TagOutlined,
   CalendarOutlined,
-  DollarOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import { trpc } from '@/lib/trpc/client'
