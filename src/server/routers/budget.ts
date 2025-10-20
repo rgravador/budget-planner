@@ -66,17 +66,19 @@ export const budgetRouter = router({
       // Check if budget for this month already exists
       const { data: existing } = await ctx.supabase
         .from('budget')
-        .select('id')
+        .select('id, amount')
         .eq('user_id', ctx.session.user.id)
         .eq('budget_month', `${input.budgetMonth}-01`)
         .maybeSingle()
 
       if (existing) {
-        // Update existing budget
+        // Add to existing budget amount instead of overriding
+        const newAmount = parseFloat(existing.amount) + input.amount
+
         const { data, error } = await ctx.supabase
           .from('budget')
           .update({
-            amount: input.amount,
+            amount: newAmount,
           })
           .eq('id', existing.id)
           .eq('user_id', ctx.session.user.id)

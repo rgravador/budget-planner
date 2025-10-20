@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Layout, Card, Button, Form, Input, Typography, Space, Alert, Avatar, Row, Col, Divider, DatePicker, List } from 'antd'
+import { Layout, Card, Button, Form, Input, Typography, Space, Alert, Avatar, Row, Col, DatePicker, List } from 'antd'
 import {
   ArrowLeftOutlined,
   UserOutlined,
@@ -215,29 +215,79 @@ export default function ProfilePage() {
                   gap: isMobile ? 12 : 0,
                 }}
               >
-                <div>
-                  <Title level={isMobile ? 3 : 2} style={{ margin: 0 }}>
-                    {profile?.name || 'No name set'}
-                  </Title>
-                  <Text type="secondary" style={{ fontSize: isMobile ? 14 : 16 }}>
-                    {profile?.role === 'tracker' ? 'Budget Tracker' : 'Administrator'}
-                  </Text>
-                </div>
+                {isEditing ? (
+                  <div style={{ width: '100%' }}>
+                    <Form
+                      form={form}
+                      layout="vertical"
+                      onFinish={handleSubmit}
+                      style={{ marginBottom: 0 }}
+                    >
+                      <Form.Item
+                        name="name"
+                        rules={[
+                          { required: true, message: 'Please enter your name!' },
+                          { min: 2, message: 'Name must be at least 2 characters!' },
+                        ]}
+                        style={{ marginBottom: 12 }}
+                      >
+                        <Input
+                          prefix={<UserOutlined />}
+                          placeholder="Enter your full name"
+                          style={{ borderRadius: 8 }}
+                          size={isMobile ? 'middle' : 'large'}
+                        />
+                      </Form.Item>
 
-                {!isEditing && (
-                  <Button
-                    type="primary"
-                    icon={<EditOutlined />}
-                    onClick={handleEdit}
-                    size={isMobile ? 'middle' : 'large'}
-                    style={{
-                      background: '#003366',
-                      borderColor: '#003366',
-                      width: isMobile ? '100%' : 'auto',
-                    }}
-                  >
-                    Edit Profile
-                  </Button>
+                      <Text type="secondary" style={{ fontSize: isMobile ? 14 : 16, display: 'block', marginBottom: 12 }}>
+                        {profile?.role === 'tracker' ? 'Budget Tracker' : 'Administrator'}
+                      </Text>
+
+                      <Space>
+                        <Button
+                          type="primary"
+                          htmlType="submit"
+                          icon={<SaveOutlined />}
+                          loading={updateProfileMutation.isPending}
+                          size={isMobile ? 'middle' : 'large'}
+                          style={{
+                            background: '#003366',
+                            borderColor: '#003366',
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button onClick={handleCancel} size={isMobile ? 'middle' : 'large'}>
+                          Cancel
+                        </Button>
+                      </Space>
+                    </Form>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <Title level={isMobile ? 3 : 2} style={{ margin: 0 }}>
+                        {profile?.name || 'No name set'}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: isMobile ? 14 : 16 }}>
+                        {profile?.role === 'tracker' ? 'Budget Tracker' : 'Administrator'}
+                      </Text>
+                    </div>
+
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      onClick={handleEdit}
+                      size={isMobile ? 'middle' : 'large'}
+                      style={{
+                        background: '#003366',
+                        borderColor: '#003366',
+                        width: isMobile ? '100%' : 'auto',
+                      }}
+                    >
+                      Edit Profile
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -409,102 +459,39 @@ export default function ProfilePage() {
             style={{ borderRadius: 8 }}
             variant="borderless"
           >
-            {isEditing ? (
-              <Form
-                form={form}
-                layout="vertical"
-                onFinish={handleSubmit}
-                size="large"
-              >
-                <Form.Item
-                  name="name"
-                  label="Full Name"
-                  rules={[
-                    { required: true, message: 'Please enter your name!' },
-                    { min: 2, message: 'Name must be at least 2 characters!' },
-                  ]}
-                >
-                  <Input
-                    prefix={<UserOutlined />}
-                    placeholder="Enter your full name"
-                    style={{ borderRadius: 8 }}
-                  />
-                </Form.Item>
-
-                <Form.Item style={{ marginBottom: 0 }}>
-                  <Space>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      icon={<SaveOutlined />}
-                      loading={updateProfileMutation.isPending}
-                      size="large"
-                      style={{
-                        background: '#003366',
-                        borderColor: '#003366',
-                      }}
-                    >
-                      Save Changes
-                    </Button>
-                    <Button onClick={handleCancel} size="large">
-                      Cancel
-                    </Button>
-                  </Space>
-                </Form.Item>
-              </Form>
-            ) : (
-              <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12}>
-                    <Space direction="vertical" size={4}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        FULL NAME
-                      </Text>
-                      <Space>
-                        <UserOutlined style={{ color: '#003366' }} />
-                        <Text strong style={{ fontSize: 16 }}>
-                          {profile?.name || <Text type="secondary">Not set</Text>}
-                        </Text>
-                      </Space>
-                    </Space>
-                  </Col>
-
-                  <Col xs={24} sm={12}>
-                    <Space direction="vertical" size={4}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        EMAIL
-                      </Text>
-                      <Space>
-                        <MailOutlined style={{ color: '#003366' }} />
-                        <Text strong style={{ fontSize: 16 }}>
-                          {profile?.email}
-                        </Text>
-                      </Space>
-                    </Space>
-                  </Col>
-                </Row>
-
-                <Divider style={{ margin: 0 }} />
-
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12}>
-                    <Space direction="vertical" size={4}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        MEMBER SINCE
-                      </Text>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12}>
+                  <Space direction="vertical" size={4}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      EMAIL
+                    </Text>
+                    <Space>
+                      <MailOutlined style={{ color: '#003366' }} />
                       <Text strong style={{ fontSize: 16 }}>
-                        {profile?.created_at
-                          ? new Date(profile.created_at).toLocaleDateString('en-US', {
-                              month: 'long',
-                              year: 'numeric',
-                            })
-                          : 'Unknown'}
+                        {profile?.email}
                       </Text>
                     </Space>
-                  </Col>
-                </Row>
-              </Space>
-            )}
+                  </Space>
+                </Col>
+
+                <Col xs={24} sm={12}>
+                  <Space direction="vertical" size={4}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      MEMBER SINCE
+                    </Text>
+                    <Text strong style={{ fontSize: 16 }}>
+                      {profile?.created_at
+                        ? new Date(profile.created_at).toLocaleDateString('en-US', {
+                            month: 'long',
+                            year: 'numeric',
+                          })
+                        : 'Unknown'}
+                    </Text>
+                  </Space>
+                </Col>
+              </Row>
+            </Space>
           </Card>
         </Space>
       </Content>
