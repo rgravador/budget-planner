@@ -114,7 +114,7 @@ export default function DashboardPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <DashboardOutlined style={{ fontSize: isMobile ? 20 : 24, color: '#D4AF37' }} />
+          <DashboardOutlined style={{ fontSize: isMobile ? 24 : 28, color: '#D4AF37' }} />
           <Title level={isMobile ? 4 : 3} style={{ margin: 0, color: '#ffffff' }}>
             Budget Planner
           </Title>
@@ -125,7 +125,7 @@ export default function DashboardPage() {
             icon={<UserOutlined style={{ color: '#D4AF37' }} />}
             onClick={() => router.push('/profile')}
             size={isMobile ? 'middle' : 'large'}
-            style={{ color: '#ffffff' }}
+            style={{ color: '#ffffff', fontSize: 24, marginTop: 18 }}
           >
             {!isMobile && 'Profile'}
           </Button>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
                     format="MMMM YYYY"
                     suffixIcon={<CalendarOutlined style={{ color: '#D4AF37' }} />}
                     size={isMobile ? 'middle' : 'large'}
-                    style={{ width: isMobile ? '100%' : 200 }}
+                    style={{ width: isMobile ? '100%' : 200, height: 48 }}
                   />
                 </Col>
               </Row>

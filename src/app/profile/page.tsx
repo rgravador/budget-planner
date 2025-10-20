@@ -320,17 +320,23 @@ export default function ProfilePage() {
                     format="MMM YY"
                     suffixIcon={<CalendarOutlined style={{ color: '#003366', fontSize: 12 }} />}
                     size="small"
-                    style={{ width: 85 }}
+                    style={{ width: 85, marginRight: 12, height: 32 }}
                   />
                   <Button
                     type="primary"
-                    icon={<PlusOutlined style={{ fontSize: 12 }} />}
+                    icon={<PlusOutlined style={{ fontSize: 20, color: 'white' }} />}
                     onClick={() => router.push('/budget/new')}
-                    size="small"
+                    shape="circle"
                     style={{
+                      width: 40,
+                      height: 40,
                       background: '#003366',
                       borderColor: '#003366',
-                      padding: '0 8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     }}
                   />
                 </Space>

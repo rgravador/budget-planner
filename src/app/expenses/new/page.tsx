@@ -1,16 +1,18 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Layout, Card, Button, Form, Input, InputNumber, Select, Typography, Space } from 'antd'
+import { Layout, Card, Button, Form, Input, InputNumber, Select, Typography, Space, DatePicker } from 'antd'
 import {
   ArrowLeftOutlined,
   TagOutlined,
   SaveOutlined,
   PlusOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import { trpc } from '@/lib/trpc/client'
 import { useMessage } from '@/lib/antd/useMessage'
+import dayjs, { Dayjs } from 'dayjs'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -20,6 +22,7 @@ interface ExpenseFormValues {
   category: string
   description: string
   amount: number
+  expenseDate: Dayjs
 }
 
 export default function NewExpensePage() {
@@ -72,7 +75,7 @@ export default function NewExpensePage() {
       category: values.category,
       description: values.description,
       amount: values.amount,
-      expenseDate: new Date().toISOString().split('T')[0],
+      expenseDate: values.expenseDate.format('YYYY-MM-DD'),
     })
   }
 
@@ -142,6 +145,9 @@ export default function NewExpensePage() {
                 onFinish={handleSubmit}
                 autoComplete="off"
                 size="large"
+                initialValues={{
+                  expenseDate: dayjs(),
+                }}
               >
                 <Form.Item
                   name="category"
@@ -157,7 +163,7 @@ export default function NewExpensePage() {
                     filterOption={(input, option) =>
                       ((option?.label || option?.children) as string).toLowerCase().includes(input.toLowerCase())
                     }
-                    dropdownRender={(menu) => (
+                    popupRender={(menu) => (
                       <>
                         {menu}
                         <div style={{ padding: '8px', borderTop: '1px solid #d9d9d9' }}>
@@ -224,6 +230,19 @@ export default function NewExpensePage() {
                   />
                 </Form.Item>
 
+                <Form.Item
+                  name="expenseDate"
+                  label={<span style={{ fontSize: 16, fontWeight: 500 }}>Date</span>}
+                  rules={[{ required: true, message: 'Please select a date!' }]}
+                >
+                  <DatePicker
+                    format="MMMM DD, YYYY"
+                    suffixIcon={<CalendarOutlined />}
+                    style={{ width: '100%', fontSize: 16 }}
+                    size="large"
+                  />
+                </Form.Item>
+
                 <Form.Item style={{ marginTop: 32, marginBottom: 0 }}>
                   <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <Button
@@ -273,6 +292,9 @@ export default function NewExpensePage() {
                 onFinish={handleSubmit}
                 autoComplete="off"
                 size="large"
+                initialValues={{
+                  expenseDate: dayjs(),
+                }}
               >
                 <Form.Item
                   name="category"
@@ -286,7 +308,7 @@ export default function NewExpensePage() {
                     filterOption={(input, option) =>
                       ((option?.label || option?.children) as string).toLowerCase().includes(input.toLowerCase())
                     }
-                    dropdownRender={(menu) => (
+                    popupRender={(menu) => (
                       <>
                         {menu}
                         <div style={{ padding: '8px', borderTop: '1px solid #d9d9d9' }}>
@@ -348,6 +370,18 @@ export default function NewExpensePage() {
                     style={{ width: '100%' }}
                     precision={2}
                     min={0}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="expenseDate"
+                  label="Date"
+                  rules={[{ required: true, message: 'Please select a date!' }]}
+                >
+                  <DatePicker
+                    format="MMMM DD, YYYY"
+                    suffixIcon={<CalendarOutlined />}
+                    style={{ width: '100%' }}
                   />
                 </Form.Item>
 

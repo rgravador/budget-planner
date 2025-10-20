@@ -243,7 +243,7 @@ export default function CategoryDetailsPage() {
                         <div style={{ display: 'flex', gap: 4 }}>
                           <Button
                             type="text"
-                            icon={<EditOutlined style={{ color: '#003366' }} />}
+                            icon={<EditOutlined style={{ color: '#003366', fontSize: isMobile ? 18 : 14 }} />}
                             onClick={() => handleEdit(expense.id)}
                             size={isMobile ? 'small' : 'middle'}
                           >
@@ -262,7 +262,7 @@ export default function CategoryDetailsPage() {
                           >
                             <Button
                               type="text"
-                              icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />}
+                              icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: isMobile ? 18 : 14 }} />}
                               danger
                               size={isMobile ? 'small' : 'middle'}
                             >
