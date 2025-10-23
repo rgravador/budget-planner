@@ -206,7 +206,7 @@ export default function CategoryDetailsPage() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ marginBottom: 4 }}>
                           <Tag color="blue" style={{ fontSize: isMobile ? 12 : 13 }}>
-                            {dayjs(expense.expense_date).format('MMM DD, YYYY')}
+                            {dayjs(expense.expense_date).format('dddd MMM D, YYYY')}
                           </Tag>
                         </div>
                         <div
