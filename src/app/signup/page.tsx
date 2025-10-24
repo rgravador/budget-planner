@@ -6,6 +6,7 @@ import { Form, Input, Button, Card, Alert, Typography } from 'antd'
 import { MailOutlined, LockOutlined } from '@ant-design/icons'
 import { trpc } from '@/lib/trpc/client'
 import { useEffect, useState } from 'react'
+import { getDeviceInfo, storeDeviceFingerprint } from '@/lib/device/fingerprint'
 
 const { Title, Text } = Typography
 
@@ -31,8 +32,19 @@ export default function SignupPage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  const deviceRegisterMutation = trpc.device.register.useMutation()
+
   const signUpMutation = trpc.auth.signUp.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Register device after successful signup
+      try {
+        const deviceInfo = await getDeviceInfo()
+        await deviceRegisterMutation.mutateAsync(deviceInfo)
+        storeDeviceFingerprint(deviceInfo.fingerprint)
+      } catch (error) {
+        console.error('Failed to register device:', error)
+      }
+
       router.push('/dashboard')
       router.refresh()
     },

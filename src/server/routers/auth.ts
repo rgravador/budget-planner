@@ -43,6 +43,17 @@ export const authRouter = router({
     }),
 
   signOut: protectedProcedure.mutation(async ({ ctx }) => {
+    // Unregister device before signing out
+    try {
+      await ctx.supabase
+        .from('user_devices')
+        .delete()
+        .eq('user_id', ctx.session.user.id)
+    } catch (error) {
+      // Continue with signout even if device unregistration fails
+      console.error('Failed to unregister device:', error)
+    }
+
     const { error } = await ctx.supabase.auth.signOut()
 
     if (error) {
