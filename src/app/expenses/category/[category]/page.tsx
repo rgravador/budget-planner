@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Layout, Card, Button, Typography, List, Space, Tag, DatePicker, Popconfirm } from 'antd'
 import {
   ArrowLeftOutlined,
@@ -22,11 +22,17 @@ const { Title, Text } = Typography
 export default function CategoryDetailsPage() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const categoryName = decodeURIComponent(params.category as string)
   const [isMobile, setIsMobile] = useState(false)
-  const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs())
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const message = useMessage()
+  
+  // Get month from URL params or default to current month
+  const monthParam = searchParams.get('month')
+  const [selectedMonth, setSelectedMonth] = useState<Dayjs>(
+    monthParam ? dayjs(monthParam) : dayjs()
+  )
 
   useEffect(() => {
     const checkMobile = () => {
@@ -38,6 +44,13 @@ export default function CategoryDetailsPage() {
 
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Update selected month when URL parameter changes
+  useEffect(() => {
+    if (monthParam) {
+      setSelectedMonth(dayjs(monthParam))
+    }
+  }, [monthParam])
 
   // Fetch expenses for the selected category and month
   const { data: expenses = [], refetch: refetchExpenses } = trpc.expense.getAll.useQuery({

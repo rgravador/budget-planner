@@ -93,7 +93,8 @@ export default function DashboardPage() {
   const totalExpenses = categoryData.reduce((sum, cat) => sum + cat.total, 0)
 
   const handleCategoryClick = (category: string) => {
-    router.push(`/expenses/category/${encodeURIComponent(category)}`)
+    const monthParam = selectedMonth.format('YYYY-MM')
+    router.push(`/expenses/category/${encodeURIComponent(category)}?month=${monthParam}`)
   }
 
   const handleMonthChange = (date: Dayjs | null) => {
